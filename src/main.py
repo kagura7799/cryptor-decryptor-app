@@ -33,6 +33,12 @@ class App:
         
         self.decrypt_key_label = ttk.Label(self.root, text="Key for decrypt:")
         self.decrypt_key_label.place(relx=0.75, rely=0.32)
+        
+        self.decrypt_key_label = ttk.Label(self.root, text="Your generated key:")
+        self.decrypt_key_label.place(relx=0.09, rely=0.32)
+
+        self.generated_key_field = tk.Text(self.root, width=15, height=0.5)
+        self.generated_key_field.place(relx=0.09, rely=0.37)
 
         open_file_button = ttk.Button(
             master=self.root,
@@ -87,16 +93,10 @@ class App:
             self.input_text_field.delete(1.0, tk.END)
             self.message("File sucessfully loaded", "success")
             
-            self.label_file_sucessfully_loaded = ttk.Label(self.root, text="File sucessfully loaded", foreground="green", font=("Arial", 16))
-            self.label_file_sucessfully_loaded.place(relx=0.39, rely=0.9)
-
             self.input_text_field.insert(tk.END, self.read_file())
         else:
-            self.label_file_sucessfully_loaded = ttk.Label(self.root, text="Failed to load file", foreground="red", font=("Arial", 16))
-            self.label_file_sucessfully_loaded.place(relx=0.39, rely=0.9)
+            self.message("Failed to load file", "error")
             
-        self.root.after(5000, self.label_file_sucessfully_loaded.destroy)
-                    
     def read_file(self):
         if not self.file_path:
             return ''
@@ -104,19 +104,24 @@ class App:
             return file.read()
 
     def encrypt(self):
-        text = self.input_text_field.get("1.0", "end-1c")
+        input_text = self.input_text_field.get("1.0", "end-1c")
         
-        if text:
-            self.key = Fernet.generate_key()
-            self.cipher_encrypt = Fernet(self.key)
-            
-            encrypted_text = self.cipher_encrypt.encrypt(text.encode())
-            
-            with open("key.txt", "wb") as key_file:
-                key_file.write(self.key)
+        if input_text:
+            try:
+                self.key = Fernet.generate_key()
+                self.cipher_encrypt = Fernet(self.key)
+                
+                encrypted_text = self.cipher_encrypt.encrypt(input_text.encode())
+                self.message("Encryption successfull", "success")
+            except Exception:
+                self.message("Encryption error", "error")
+                
+            self.generated_key_field.insert(tk.END, self.key)            
             
             self.output_text_field.delete(1.0, tk.END)
             self.output_text_field.insert(tk.END, encrypted_text.decode())
+        else:
+            self.message("Input field is empty", "error")
 
     def decrypt(self):
         input_text = self.input_text_field.get("1.0", "end-1c")
@@ -127,12 +132,12 @@ class App:
         if input_text:
             try:
                 decrypted_text = cipher_decrypt.decrypt(input_text.encode())
-                
-                self.output_text_field.delete(1.0, tk.END)
-                self.output_text_field.insert(tk.END, decrypted_text.decode())
-                self.message("Decryptation successful", "success")
-            except Exception as e:
+                self.message("Decryption successful", "success")
+            except Exception:
                 self.message("Incorrect key", "error")
+                
+            self.output_text_field.delete(1.0, tk.END)
+            self.output_text_field.insert(tk.END, decrypted_text.decode())
         else:
             self.message("Input field is empty", "error")
         
