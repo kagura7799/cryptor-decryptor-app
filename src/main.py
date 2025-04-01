@@ -11,8 +11,6 @@ class App:
         self.root.resizable(False, False)
         self.root.geometry('900x450')
         
-        self.key = Fernet.generate_key()
-        self.cipher = Fernet(self.key)
         self.file_path = None
 
         self.show_widgets()
@@ -73,6 +71,7 @@ class App:
             
         msg = ttk.Label(self.root, text=message_text, foreground=color, font=("Arial", 16))
         msg.place(relx=0.39, rely=0.9)
+        self.root.after(5000, msg.destroy)
 
     def open_file(self):
         self.file_path = fd.askopenfilename(
@@ -109,9 +108,9 @@ class App:
         
         if text:
             self.key = Fernet.generate_key()
-            self.cipher = Fernet(self.key)
+            self.cipher_encrypt = Fernet(self.key)
             
-            encrypted_text = self.cipher.encrypt(text.encode())
+            encrypted_text = self.cipher_encrypt.encrypt(text.encode())
             
             with open("key.txt", "wb") as key_file:
                 key_file.write(self.key)
@@ -120,26 +119,23 @@ class App:
             self.output_text_field.insert(tk.END, encrypted_text.decode())
 
     def decrypt(self):
-        text = self.input_text_field.get("1.0", "end-1c")
-        
+        input_text = self.input_text_field.get("1.0", "end-1c")
         user_key = self.key_field.get("1.0", "end-1c")
-        str_key = self.key.decode('utf-8')
+        
+        cipher_decrypt = Fernet(user_key)
 
-        if text:
-            if str_key == user_key:
-                try:
-                    decrypted_text = self.cipher.decrypt(text.encode())
-                    
-                    self.output_text_field.delete(1.0, tk.END)
-                    self.output_text_field.insert(tk.END, decrypted_text.decode())
-                    self.message("Decryptation successful", "success")
-                except Exception as e:
-                    self.message("Incorrect key", "error")
-            else:
-                print("ключ разный")
-                print(user_key)
-                print(str_key)
+        if input_text:
+            try:
+                decrypted_text = cipher_decrypt.decrypt(input_text.encode())
                 
+                self.output_text_field.delete(1.0, tk.END)
+                self.output_text_field.insert(tk.END, decrypted_text.decode())
+                self.message("Decryptation successful", "success")
+            except Exception as e:
+                self.message("Incorrect key", "error")
+        else:
+            self.message("Input field is empty", "error")
+        
         
 if __name__ == "__main__":
     app = App()
